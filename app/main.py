@@ -22,6 +22,7 @@ class UserInfo(db.Model):
     name = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     age = db.Column(db.Integer, nullable=False)
+    spendings = db.relationship('UserSpending', backref='user', lazy=True)
 
     def __repr__(self):
         return f"<UserInfo(user_id={self.user_id}, name={self.name}, email={self.email}, age={self.age})>"
@@ -30,7 +31,7 @@ class UserSpending(db.Model):
     __tablename__ = 'user_spending'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user_info.user_id'), nullable=False)
     money_spent = db.Column(db.Float, nullable=False)
     year = db.Column(db.Integer, nullable=False)
 
@@ -63,10 +64,16 @@ def average_spending_by_age():
     average_spending_by_age = {}
 
     for range_name, age_range in age_ranges.items():
-        average_spending = UserSpending.query.filter(UserSpending.age >= age_range[0],
-                                                     UserSpending.age <= age_range[1]).with_entities(
-            db.func.avg(UserSpending.money_spent)).scalar()
+        average_spending = db.session.query(db.func.avg(UserSpending.money_spent)). \
+            join(UserInfo).filter(UserInfo.age >= age_range[0],
+                                  UserInfo.age <= age_range[1]).scalar()
         average_spending_by_age[range_name] = float(average_spending) if average_spending is not None else 0.0
+
+    # for range_name, age_range in age_ranges.items():
+    #     average_spending = UserSpending.query.filter(UserSpending.age >= age_range[0],
+    #                                                  UserSpending.age <= age_range[1]).with_entities(
+    #         db.func.avg(UserSpending.money_spent)).scalar()
+    #     average_spending_by_age[range_name] = float(average_spending) if average_spending is not None else 0.0
 
     return jsonify(average_spending_by_age), 200
 
@@ -94,7 +101,8 @@ with app.app_context():
     db.session.add(sample_user)
     db.session.commit()
 
-    sample_spending = UserSpending(id =sample_user.user_id, money_spent=1000, year=2023)
+    sample_spending = UserSpending(user_id=sample_user.user_id, money_spent=1000, year=2023)
+
     db.session.add(sample_spending)
     db.session.commit()
 
