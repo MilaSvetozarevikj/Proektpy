@@ -93,6 +93,11 @@ def average_spending_by_age():
 #Mongodb
 @app.route('/write_to_mongodb', methods=['POST'])
 def write_to_mongodb():
+    data = request.get_json()
+    if 'user_id' not in data or 'total_spent' not in data:
+        return jsonify({'error': 'Incomplete data'}), 400
+
+
     try:
         all_users = UserInfo.query.all()
         for user in all_users:
