@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from pymongo.mongo_client import MongoClient
 from telegram import Bot
 import asyncio
-from API import get_total_spent, write_to_mongodb, get_average_spending_by_age
+
 
 app = Flask(__name__)
 
@@ -13,7 +13,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Configuration for MongoDB
-mongo_client = MongoClient("mongodb+srv://svetozarevicmila21:XpQdxRAz8UO3TkXT@cluster0.cgdrjnj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+mongo_client = MongoClient("mongodb+srv://svetozarevicmila21:XpQdxRAz8UO3TkXT@cluster0"
+                           ".cgdrjnj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 mongo_db = mongo_client["users_vouchers"]
 mongo_collection = mongo_db["vouchers"]
 
@@ -90,13 +91,12 @@ def average_spending_by_age():
     return jsonify(total_spending_by_age_range), 200
 
 
-#Mongodb
+# Mongodb
 @app.route('/write_to_mongodb', methods=['POST'])
 def write_to_mongodb():
     data = request.get_json()
     if 'user_id' not in data or 'total_spent' not in data:
         return jsonify({'error': 'Incomplete data'}), 400
-
 
     try:
         all_users = UserInfo.query.all()
@@ -125,14 +125,14 @@ def send_telegram_message_route():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 async def send_telegram_message(average_spending_by_age):
     chat_id = '6609218734'
     message = "Average Spending by Age Ranges:\n"
     for range_name, avg_spending in average_spending_by_age.items():
-        message += f"{range_name}: ${avg_spending:.2f}\n"
+        message += f"{range_name}: ${avg_spending: .2f}\n"
 
     await bot.send_message(chat_id=chat_id, text=message)
-
 
 
 # Initialize database tables

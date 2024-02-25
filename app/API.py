@@ -2,6 +2,7 @@ import requests
 
 FLASK_API_BASE_URL = 'http://localhost:5000'
 
+
 def get_total_spent(user_id):
     url = f'{FLASK_API_BASE_URL}/total_spent/{user_id}'
     response = requests.get(url)
@@ -9,6 +10,7 @@ def get_total_spent(user_id):
         return response.json()
     else:
         return None
+
 
 def write_to_mongodb(user_id, total_spent):
     if total_spent > 1000:
@@ -20,6 +22,7 @@ def write_to_mongodb(user_id, total_spent):
         else:
             print("Error.")
 
+
 def get_average_spending_by_age():
     url = f'{FLASK_API_BASE_URL}/average_spending_by_age'
     response = requests.get(url)
@@ -27,6 +30,7 @@ def get_average_spending_by_age():
         return response.json()
     else:
         return None
+
 
 if __name__ == '__main__':
     user_id = 1
