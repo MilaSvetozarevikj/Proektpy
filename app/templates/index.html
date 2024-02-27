@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #8a2be2;
+        }
+        .button {
+            display: inline-block;
+            width: 200px;
+            padding: 10px;
+            margin: 20px 10px;
+            background-color: #8a2be2;
+            color: #fff;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #6a1b9a;
+        }
+        .sign-in-button {
+            display: block;
+            width: 200px;
+            padding: 10px;
+            margin: 20px auto;
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .sign-in-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Home Page</h1>
+        <a href="/average_spending_by_age" class="button">Average Spending by Age</a>
+        <a href="/total_spent/1" class="button">Total Spent</a>
+        <button class="sign-in-button" onclick="signIn()">Sign In</button>
+        <div id="signInOptions" style="display: none;">
+            <form action="/save_user" method="post">
+                <input type="text" name="firstName" placeholder="First Name"><br>
+                <input type="text" name="email" placeholder="Email"><br>
+                <input type="number" name="age" placeholder="Age"><br>
+                <input type="number" name="spentMoney" placeholder="Spent Money"><br>
+                <input type="number" name="year" placeholder="Year"><br>
+                <input type="submit" value="Save">
+                <button type="button" onclick="cancel()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function signIn() {
+            document.getElementById('signInOptions').style.display = 'block';
+        }
+
+        function cancel() {
+            document.getElementById('signInOptions').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
