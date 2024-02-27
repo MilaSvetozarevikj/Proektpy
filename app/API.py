@@ -14,12 +14,11 @@ def get_total_spent(user_id):
 
 
 def write_to_mongodb(user_id, total_spent):
-
     if total_spent > 1000:
         url = f'{FLASK_API_BASE_URL}/write_to_mongodb'
         data = {'user_id': user_id, 'total_spent': total_spent}
         response = requests.post(url, json=data)
-        if response.status_code == 201:
+        if response.status_code == 201:  # Промени го статусниот код на 201 за успешно креиран ресурс
             print("Successfully written in MongoDB")
         else:
             print("Error.")
@@ -29,7 +28,7 @@ def get_average_spending_by_age():
 
     url = f'{FLASK_API_BASE_URL}/average_spending_by_age'
     response = requests.get(url)
-    if response.status_code == 201:
+    if response.status_code == 200:
         return response.json()
     else:
         return None

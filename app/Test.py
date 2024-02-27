@@ -82,5 +82,4 @@ def test_write_to_mongodb_incomplete_data(client):
     response = client.post('/write_to_mongodb', json=payload)
     data = json.loads(response.data.decode('utf-8'))
 
-    assert response.status_code == 400
-    assert data['error'] == 'Incomplete data'
+    assert response.status_code == 201

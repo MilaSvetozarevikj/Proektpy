@@ -84,31 +84,22 @@ def average_spending_by_age():
 # Mongodb
 @app.route('/write_to_mongodb', methods=['POST'])
 def write_to_mongodb():
-    data = request.get_json()
-    if 'name' not in data or 'email' not in data or 'age' not in data or 'money_spent' not in data:
-        return jsonify({'error': 'Incomplete data'}), 400
+        try:
+            num_users = UserInfo.query.all()
+            for user in num_users:
+                total_spent = (db.session.query(db.func.sum(UserSpending.money_spent)).filter_by(user_id=user.user_id).scalar())
+                if total_spent is not None and total_spent >=500:
+                    user_data = {
+                        'user_id': user.user_id,
+                        'name': user.name,
+                        'email': user.email,
+                        'age': user.age
+                    }
+                    mongo_collection.insert_one(user_data)
 
-    try:
-
-        num_users = UserInfo.query.count()
-
-        user_id = num_users + 1
-        name = data['name']
-        email = data['email']
-        age = data['age']
-        money_spent = data['money_spent']
-
-        mongo_collection.insert_one({
-            'user_id': user_id,
-            'name': name,
-            'email': email,
-            'age': age,
-            'money_spent': money_spent
-        })
-
-        return jsonify({'message': 'Successfully added to MongoDB'}), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            return jsonify({'message': 'Successfully added to MongoDB'}), 201
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 
 @app.route('/save_user', methods=['POST'])
