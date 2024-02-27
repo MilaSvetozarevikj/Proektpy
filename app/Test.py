@@ -42,7 +42,7 @@ def test_average_spending_by_age(client):
     user1 = UserInfo(name='Mila', email='mila@gmail.com', age=22)
     user2 = UserInfo(name='Marija', email='marija@gmail.com', age=25)
     user3 = UserInfo(name='Boko', email='boko@gmail.com', age=18)
-    db.session.add_all([user1,user2,user3])
+    db.session.add_all([user1, user2, user3])
     db.session.commit()
     spending1 = UserSpending(user_id=user1.user_id, money_spent=2000, year=2021)
     spending2 = UserSpending(user_id=user2.user_id, money_spent=6000, year=2022)
@@ -70,7 +70,7 @@ def test_write_to_mongodb(client):
     try:
         assert response.status_code == 201
     except AssertionError:
-        assert response.status_code == 500
+        assert response.status_code == 400
 
         if response.content_type == 'application/json':
             data = json.loads(response.data)

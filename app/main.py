@@ -1,9 +1,8 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_sqlalchemy import SQLAlchemy
-from pymongo.mongo_client import MongoClient
+from pymongo import MongoClient
 from telegram import Bot
 import asyncio
-
 
 app = Flask(__name__)
 
@@ -15,8 +14,7 @@ db = SQLAlchemy(app)
 # Configuration for MongoDB
 mongo_client = MongoClient("mongodb+srv://svetozarevicmila21:XpQdxRAz8UO3TkXT@cluster0"
                            ".cgdrjnj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-mongo_db = mongo_client["users_vouchers"]
-mongo_collection = mongo_db["vouchers"]
+mongo_collection = mongo_client.users_vouchers.vouchers
 
 # Telegram bot token
 TELEGRAM_BOT_TOKEN = '6922326558:AAHXCO05eruWBSJ08_cFBzk-v2_-KjBnsy8'
@@ -27,14 +25,11 @@ bot = Bot(token=TELEGRAM_BOT_TOKEN)
 class UserInfo(db.Model):
     __tablename__ = 'user_info'
 
-    user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     age = db.Column(db.Integer, nullable=False)
     spendings = db.relationship('UserSpending', backref='user')
-
-    def __repr__(self):
-        return f"<UserInfo(user_id={self.user_id}, name={self.name}, email={self.email}, age={self.age})>"
 
 
 class UserSpending(db.Model):
@@ -45,15 +40,16 @@ class UserSpending(db.Model):
     money_spent = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
 
-    def __repr__(self):
-        return f"<UserSpending(user_id={self.user_id}, money_spent={self.money_spent}, year={self.year})>"
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 
 # Route to get total spending for a user
 @app.route('/total_spent/<int:user_id>', methods=['GET'])
 def total_spent(user_id):
-    total_spent = (UserSpending.query.filter_by(user_id=user_id)
-                   .with_entities(db.func.avg(UserSpending.money_spent)).scalar())
+    total_spent = db.session.query(db.func.avg(UserSpending.money_spent)).filter_by(user_id=user_id).scalar()
 
     if total_spent is not None:
         response = {'user_id': user_id, 'total_spent': float(total_spent)}
@@ -73,21 +69,15 @@ def average_spending_by_age():
         '>47': (48, 150)
     }
 
-    total_spending_by_age_range = {
-        '18-24': 0,
-        '25-30': 0,
-        '31-36': 0,
-        '37-47': 0,
-        '>47': 0,
-    }
+    total_spending_by_age_range = {}
 
     for range_name, age_range in age_ranges.items():
-        users_in_range = UserInfo.query.filter(UserInfo.age >= age_range[0], UserInfo.age <= age_range[1]).all()
-        total_spending = sum(user.spendings[0].money_spent for user in users_in_range)
+        total_spending = db.session.query(db.func.sum(UserSpending.money_spent)).\
+            join(UserInfo, UserInfo.user_id == UserSpending.user_id).\
+            filter(UserInfo.age >= age_range[0], UserInfo.age <= age_range[1]).scalar() or 0
         total_spending_by_age_range[range_name] = total_spending
 
     asyncio.run(send_telegram_message(total_spending_by_age_range))
-
     return jsonify(total_spending_by_age_range), 200
 
 
@@ -95,33 +85,60 @@ def average_spending_by_age():
 @app.route('/write_to_mongodb', methods=['POST'])
 def write_to_mongodb():
     data = request.get_json()
-    if 'user_id' not in data or 'total_spent' not in data:
+    if 'name' not in data or 'email' not in data or 'age' not in data or 'money_spent' not in data:
         return jsonify({'error': 'Incomplete data'}), 400
 
     try:
-        all_users = UserInfo.query.all()
-        for user in all_users:
-            data = {
-                'user_id': user.user_id,
-                'name': user.name,
-                'email': user.email,
-                'age': user.age
-            }
-            mongo_collection.insert_one(data)
+
+        num_users = UserInfo.query.count()
+
+        user_id = num_users + 1
+        name = data['name']
+        email = data['email']
+        age = data['age']
+        money_spent = data['money_spent']
+
+        mongo_collection.insert_one({
+            'user_id': user_id,
+            'name': name,
+            'email': email,
+            'age': age,
+            'money_spent': money_spent
+        })
 
         return jsonify({'message': 'Successfully added to MongoDB'}), 201
-
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
-# Function to send statistics to Telegram bot
+@app.route('/save_user', methods=['POST'])
+def save_user():
+    if request.method == 'POST':
+        first_name = request.form['firstName']
+        email = request.form['email']
+        age = request.form['age']
+        spent_money = request.form['spentMoney']
+        year = request.form['year']
+
+        new_user = UserInfo(name=first_name, email=email, age=age)
+        db.session.add(new_user)
+        db.session.commit()
+
+        user_id = new_user.user_id
+
+        new_spending = UserSpending(user_id=user_id, money_spent=spent_money, year=year)
+        db.session.add(new_spending)
+        db.session.commit()
+
+        return 'User saved successfully!'
+
+
 @app.route('/send_telegram_message', methods=['POST'])
 def send_telegram_message_route():
     try:
         total_spending_by_age_range = request.get_json()
         asyncio.run(send_telegram_message(total_spending_by_age_range))
-        return jsonify({'message': 'Telegram message successfully send'})
+        return jsonify({'message': 'Telegram message successfully sent'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -133,7 +150,6 @@ async def send_telegram_message(average_spending_by_age):
         message += f"{range_name}: ${avg_spending: .2f}\n"
 
     await bot.send_message(chat_id=chat_id, text=message)
-
 
 # Initialize database tables
 with app.app_context():
@@ -176,7 +192,6 @@ with app.app_context():
                 db.session.add(sample_spending)
 
     db.session.commit()
-
 
 if __name__ == '__main__':
     app.run(debug=True)

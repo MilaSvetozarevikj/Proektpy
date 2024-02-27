@@ -4,6 +4,7 @@ FLASK_API_BASE_URL = 'http://localhost:5000'
 
 
 def get_total_spent(user_id):
+
     url = f'{FLASK_API_BASE_URL}/total_spent/{user_id}'
     response = requests.get(url)
     if response.status_code == 200:
@@ -13,6 +14,7 @@ def get_total_spent(user_id):
 
 
 def write_to_mongodb(user_id, total_spent):
+
     if total_spent > 1000:
         url = f'{FLASK_API_BASE_URL}/write_to_mongodb'
         data = {'user_id': user_id, 'total_spent': total_spent}
@@ -24,15 +26,17 @@ def write_to_mongodb(user_id, total_spent):
 
 
 def get_average_spending_by_age():
+
     url = f'{FLASK_API_BASE_URL}/average_spending_by_age'
     response = requests.get(url)
-    if response.status_code == 200:
+    if response.status_code == 201:
         return response.json()
     else:
         return None
 
 
 if __name__ == '__main__':
+
     user_id = 1
     total_spent_data = get_total_spent(user_id)
     if total_spent_data:
